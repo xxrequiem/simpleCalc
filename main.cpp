@@ -161,6 +161,7 @@ int main() {
                         clearScreen();
                         break;
                     case 3:
+                        clearScreen();
                         return 0;
                     default:
                         cout << "Ошибка! Выбрано некорректное действие!" << endl;
