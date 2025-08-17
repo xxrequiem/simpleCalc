@@ -1,5 +1,9 @@
 #include <iostream>
 #include <limits>
+#include <string>
+#include <cctype>
+#include <algorithm>
+
 using namespace std;
 
 void showMenu() {
@@ -63,47 +67,75 @@ double calculate(double a, char operation, double b) {
 
 void calculationProcess() {
     bool calculateAgain;
+    bool cleanBuffer = true;
     do {
+        string input;
         double a, b, result;
         char operation;
-        bool inputValid = false;
-
-        while (!inputValid) {
-            cout << "Введите выражение: ";
-            cin >> a;
-            
-            // Проверка первого числа
-            if (cin.fail()) {
-                cin.clear();
-                cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                cout << "Ошибка: Некорректный ввод числа!" << endl;
-                continue;
+        bool isValid = true;
+        
+        cout << "Введите выражение: ";
+        if (cleanBuffer) {
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        }
+        getline(cin, input);
+        
+        input.erase(remove_if(input.begin(), input.end(), ::isspace), input.end());
+        
+        if (input.empty()) {
+            cout << "Ошибка: Пустой ввод!\n";
+            cleanBuffer = false;
+            continue;
+        }
+        
+        size_t operationPosition = input.find_first_of("+-*/");
+        if (operationPosition == string::npos) {
+            cout << "Ошибка: Не был введен оператор!\n";
+            cleanBuffer = false;
+            continue;
+        }
+        
+        if (operationPosition == 0 || operationPosition == input.length() - 1) {
+            cout << "Ошибка: Некорректная позиция оператора!\n";
+            cleanBuffer = false;
+            continue;
+        }
+        
+        string firstNum = input.substr(0, operationPosition);
+        for (char c : firstNum) {
+            if (!isdigit(c) && c != '.' && c != '-') {
+                cout << "Ошибка: Первый операнд не является числом!\n";
+                cleanBuffer = false;
+                isValid = false;
+                break;
             }
-            
-            cin >> operation;
-            
-            // Проверка оператора
-            if (operation != '+' && operation != '-' && 
-                operation != '*' && operation != '/') {
-                cin.clear();
-                cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                cout << "Ошибка: Некорректная операция! Используйте +, -, *, /" << endl;
-                continue;
+        }
+        if (!isValid) continue;
+        
+        string secondNum = input.substr(operationPosition + 1);
+        for (char c : secondNum) {
+            if (!isdigit(c) && c != '.' && c != '-') {
+                cout << "Ошибка: Второй операнд не является числом!\n";
+                cleanBuffer = false;
+                isValid = false;
+                break;
             }
-            
-            cin >> b;
-            
-            // Проверка второго числа
-            if (cin.fail()) {
-                cin.clear();
-                cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                cout << "Ошибка: Некорректный ввод числа!" << endl;
-                continue;
-            }
-            
-            inputValid = true;
+        }
+        if (!isValid) {
+            continue;
         }
 
+        try {
+            a = stod(input.substr(0, operationPosition));
+            operation = input[operationPosition];
+            b = stod(input.substr(operationPosition + 1));
+        }
+        catch (const invalid_argument&) {
+            cout << "Ошибка: Некорректный формат числа!" << endl;
+            cleanBuffer = false;
+            continue;
+        }
+        
         result = calculate(a, operation, b);
         bool divisionByZero = (operation == '/' && b == 0);
         
@@ -115,6 +147,7 @@ void calculationProcess() {
         char answer;
         cin >> answer;
         calculateAgain = (answer == 'y');
+        cleanBuffer = true;
     } while (calculateAgain);
 }
 
@@ -164,6 +197,7 @@ int main() {
                         clearScreen();
                         return 0;
                     default:
+                        clearScreen();
                         cout << "Ошибка! Выбрано некорректное действие!" << endl;
                 }
                 break;
